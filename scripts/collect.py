@@ -15,8 +15,12 @@ DATA = Path("data/runs.jsonl")
 KEEP = ("schema", "id", "date", "tool", "machine", "emulator", "settings", "performance", "failures", "note")
 
 
+HASH16 = re.compile(r"\b[0-9a-f]{16}\b")
+
+
 def text(v, n=300):
-    return str(v)[:n]
+    # Title shader hashes never go in the dataset (VIctory's rule 7, #1633).
+    return HASH16.sub("<shader>", str(v))[:n]
 
 
 def clean(rec):
@@ -31,6 +35,8 @@ def clean(rec):
         "gpus": [text(g, 120) for g in (m.get("gpus") or [])[:4]],
         "ram_gb": m.get("ram_gb") if isinstance(m.get("ram_gb"), (int, float)) else None,
     }
+    # (The title build's BLAKE3 is a build identity, allowed; it is 64 hex
+    # digits, which the shader-hash rule does not touch.)
     out["emulator"] = {text(k, 40): text(v, 160) for k, v in list((out.get("emulator") or {}).items())[:10]}
     out["settings"] = {text(k, 60): text(v, 200) for k, v in list((out.get("settings") or {}).items())[:80]
                        if str(k).startswith("VICTORY_")}
