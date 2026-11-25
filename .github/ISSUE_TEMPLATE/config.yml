@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Submit a run with victory-doctor
+    url: https://github.com/shawshanker18/victory-doctor
+    about: "Run `python victory_doctor.py submit <run id>`: it fills in the [run] issue for you."

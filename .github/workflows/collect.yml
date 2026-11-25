@@ -1,0 +1,39 @@
+name: collect runs
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: collect-runs
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    if: startsWith(github.event.issue.title, '[run]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Add the record
+        id: add
+        run: python scripts/collect.py
+      - name: Commit
+        run: |
+          git config user.name "victory-runs"
+          git config user.email "victory-runs@users.noreply.github.com"
+          git add data/runs.jsonl
+          git diff --cached --quiet || git commit -m "Add run from issue #${{ github.event.issue.number }}"
+          git push
+      - name: Close the report
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUMBER: ${{ github.event.issue.number }}
+        run: gh issue close "$NUMBER" --repo "$GITHUB_REPOSITORY" --comment "Added to data/runs.jsonl. Thanks!"
